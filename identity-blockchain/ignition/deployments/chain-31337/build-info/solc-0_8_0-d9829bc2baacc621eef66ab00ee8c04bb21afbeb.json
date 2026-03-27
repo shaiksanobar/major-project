@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_0-d9829bc2baacc621eef66ab00ee8c04bb21afbeb",
+  "solcVersion": "0.8.0",
+  "solcLongVersion": "0.8.0+commit.c7dfd78e",
+  "userSourceNameMap": {
+    "contracts/Identity.sol": "project/contracts/Identity.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "istanbul",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Identity.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.0;\r\n\r\ncontract Identity {\r\n    \r\n    address public admin;\r\n\r\n    // Identity hash stored by user address\r\n    mapping(address => string) public identityHash;\r\n    \r\n    // Verification status\r\n    mapping(address => bool) public verified;\r\n\r\n    // Events (very important for frontend + AI fraud detection off-chain)\r\n    event IdentityRegistered(address indexed user, string identityHash);\r\n    event IdentityVerified(address indexed user, address indexed verifiedBy);\r\n    event IdentityRevoked(address indexed user, address indexed revokedBy);\r\n\r\n    constructor() {\r\n        admin = msg.sender;\r\n    }\r\n\r\n    // Modifier for admin-only functions\r\n    modifier onlyAdmin() {\r\n        require(msg.sender == admin, \"Only admin can perform this action\");\r\n        _;\r\n    }\r\n\r\n    /**\r\n     * @notice User registers their own identity hash (e.g., IPFS hash of documents + AI score)\r\n     */\r\n    function registerIdentity(string memory _hash) public {\r\n        require(bytes(_hash).length > 0, \"Identity hash cannot be empty\");\r\n        \r\n        identityHash[msg.sender] = _hash;\r\n        verified[msg.sender] = false;   // Default: not verified until admin approves\r\n\r\n        emit IdentityRegistered(msg.sender, _hash);\r\n    }\r\n\r\n    /**\r\n     * @notice Admin verifies a user's identity (after checking KYC / AI fraud score)\r\n     */\r\n    function verifyIdentity(address user) public onlyAdmin {\r\n        require(user != address(0), \"Invalid user address\");\r\n        require(bytes(identityHash[user]).length > 0, \"User has not registered identity\");\r\n\r\n        verified[user] = true;\r\n        emit IdentityVerified(user, msg.sender);\r\n    }\r\n\r\n    /**\r\n     * @notice Admin can revoke verification (e.g., if AI fraud detection flags suspicious activity)\r\n     */\r\n    function revokeVerification(address user) public onlyAdmin {\r\n        require(verified[user] == true, \"User is not verified\");\r\n        \r\n        verified[user] = false;\r\n        emit IdentityRevoked(user, msg.sender);\r\n    }\r\n\r\n    /**\r\n     * @notice Anyone can check verification status\r\n     */\r\n    function getStatus(address user) public view returns (bool) {\r\n        return verified[user];\r\n    }\r\n\r\n    /**\r\n     * @notice Get the identity hash of a user\r\n     */\r\n    function getIdentityHash(address user) public view returns (string memory) {\r\n        return identityHash[user];\r\n    }\r\n\r\n    /**\r\n     * @notice Check if caller is admin (useful for frontend)\r\n     */\r\n    function isAdmin() public view returns (bool) {\r\n        return msg.sender == admin;\r\n    }\r\n}"
+      }
+    }
+  }
+}
